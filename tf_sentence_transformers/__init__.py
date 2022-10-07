@@ -1,26 +1,31 @@
 
 import tensorflow as tf
 from tensorflow import keras
-from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, TFAutoModel
 
 
 class SentenceTransformer(tf.keras.layers.Layer):
-    def __init__(self, tokenizer, model, embedding_dim=384, *args, **kwargs):
+    """
+    Example usage:
+
+    ```
+    layer = SentenceTransformer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    inputs = ['This is a test sentence.']
+    embedding = layer(inputs)
+    print(embedding.shape)
+    ```
+    """
+    def __init__(self, tokenizer, model, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tokenizer = tokenizer
         self.model = model
-        self.embedding_dim = embedding_dim
     
     @classmethod
     def from_pretrained(cls, model_name: str="sentence-transformers/all-MiniLM-L6-v2", from_pt=True):
-        # TODO: get embedding_dim from the model.
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         pretrained_setr_tf = TFAutoModel.from_pretrained(model_name, from_pt=from_pt)
-        embedding_dim = 384
-        return cls(tokenizer=tokenizer, model=model, embedding_dim=embedding_dim)
+        return cls(tokenizer=tokenizer, model=pretrained_setr_tf)
 
-        
     def tf_encode(self, inputs):
         def encode(inputs):
             inputs = [x[0].decode("utf-8") for x in inputs.numpy()]
@@ -50,14 +55,10 @@ class SentenceTransformer(tf.keras.layers.Layer):
         input_ids, token_type_ids, attention_mask = self.tf_encode(inputs)
         model_output = self.process(input_ids, token_type_ids, attention_mask)
         embeddings = self.mean_pooling(model_output, attention_mask)
-        embeddings = tf.reshape(embeddings, (-1, self.embedding_dim))
+        embedding_dim = model_output[0].shape[-1]
+        embeddings = tf.reshape(embeddings, (-1, embedding_dim))
         return embeddings
     
-    def test_call(self):
-        inputs = ['This is a test sentence.']
-        embedding = self(inputs)
-        print(embedding.shape)
-
 
 # If using sentence-transformers (torch):
 # setr = SentenceTransformer('paraphrase-MiniLM-L6-v2')
