@@ -2,7 +2,13 @@
 
 name: Publish Python 🐍 distributions 📦 to PyPI and TestPyPI
 
-on: push
+on:
+  push:
+    tags:        
+      - '**' # Push events to every tag including hierarchical tags like v1.0/beta
+    branches:
+      - testpypi
+
 
 jobs:
   build-n-publish:
@@ -29,7 +35,7 @@ jobs:
         --outdir dist/
         .
     - name: Publish distribution 📦 to Test PyPI
-      if: startsWith(github.ref, 'refs/heads/main')
+      if: startsWith(github.ref, 'refs/heads/testpypi')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
