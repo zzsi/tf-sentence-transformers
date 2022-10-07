@@ -8,10 +8,15 @@ class SentenceTransformer(tf.keras.layers.Layer):
     Example usage:
 
     ```
-    layer = SentenceTransformer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-    inputs = ['This is a test sentence.']
+    layer = SentenceTransformer.from_pretrained(
+        "sentence-transformers/all-MiniLM-L6-v2", from_pt=False
+    )
+    inputs = [
+        ["This is a test sentence."],
+        ["This is another test sentence."],
+    ]
     embedding = layer(inputs)
-    print(embedding.shape)
+    # assert embedding.shape == (2, 384)
     ```
     """
 
