@@ -20,18 +20,37 @@ class SentenceTransformer(tf.keras.layers.Layer):
     ```
     """
 
-    def __init__(self, tokenizer, model, *args, **kwargs):
+    def __init__(self, tokenizer, model, embedding_dim: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tokenizer = tokenizer
         self.model = model
+        self.embedding_dim = embedding_dim
 
     @classmethod
     def from_pretrained(
-        cls, model_name: str = "sentence-transformers/all-MiniLM-L6-v2", from_pt=False
+        cls,
+        model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
+        from_pt=False,
+        jit_compile=False,
     ):
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         pretrained_setr_tf = TFAutoModel.from_pretrained(model_name, from_pt=from_pt)
-        return cls(tokenizer=tokenizer, model=pretrained_setr_tf)
+        if jit_compile:
+            pretrained_setr_tf = tf.function(
+                pretrained_setr_tf, jit_compile=jit_compile
+            )
+
+        # Get embedding_dim by running a dummy input through the model.
+        test_input = "test"
+        tokenized = tokenizer(
+            [test_input], padding=True, truncation=True, return_tensors="tf"
+        )
+        x = pretrained_setr_tf(tokenized)[0]
+        embedding_dim = x.shape[-1]
+
+        return cls(
+            tokenizer=tokenizer, model=pretrained_setr_tf, embedding_dim=embedding_dim
+        )
 
     def tf_encode(self, inputs):
         def encode(inputs):
@@ -82,7 +101,7 @@ class SentenceTransformer(tf.keras.layers.Layer):
         input_ids, token_type_ids, attention_mask = self.tf_encode(inputs)
         model_output = self.process(input_ids, token_type_ids, attention_mask)
         embeddings = self.mean_pooling(model_output, attention_mask)
-        embedding_dim = model_output[0].shape[-1]
+        embedding_dim = self.embedding_dim
         embeddings = tf.reshape(embeddings, (-1, embedding_dim))
         return embeddings
 
