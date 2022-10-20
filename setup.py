@@ -8,7 +8,7 @@ with open("README.md") as f:
 
 setup(
     name="tf_sentence_transformers",
-    version="0.1.1",
+    version="0.2",
     description="A Tensorflow SentenceTransformer layer that takes in strings as input.",
     url="https://github.com/zzsi/tf_sentence_transformers",
     author="ZZ Si",
